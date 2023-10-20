@@ -6,26 +6,41 @@ TITLE_FONT = ("Arial", 40, "italic")
 WORD_FONT = ("Arial", 60, "bold")
 BACKGROUND_COLOR = "#B1DDC6"
 WORD_DATABASE = "data/english_words.csv"
+TO_LEARN = "data/word_to_learn.csv"
 TIME = 3000
 
-df = pd.read_csv(WORD_DATABASE)
+try:
+    df = pd.read_csv(TO_LEARN)
+except FileNotFoundError:
+    df = pd.read_csv(WORD_DATABASE)
+
 lang_in = df.columns[0]
 lang_out = df.columns[1]
 df = df[df[lang_in].str.len() > 1]
 translation = ""
+rnd_row = 0
+to_learn = df.copy()
 
 
 # ---------------------------- PICK WORD ------------------------------- #
 def pick_word():
-    global translation, flip_timer
+    global translation, flip_timer, rnd_row
     window.after_cancel(flip_timer)
-    rnd_index = random.choice(df.index)
-    word = df.loc[rnd_index][lang_in]
-    translation = df.loc[rnd_index][lang_out]
+    rnd_row = random.choice(to_learn.index)
+    word = to_learn.loc[rnd_row][lang_in]
+    translation = to_learn.loc[rnd_row][lang_out]
     canvas.itemconfig(card, image=card_front_img)
     canvas.itemconfig(card_title, text=lang_in, fill="black")
     canvas.itemconfig(card_word, text=word, fill="black")
     flip_timer = window.after(TIME, func=flip_card)
+
+
+# ---------------------------- GREEN BUTTON ------------------------------- #
+def green_button():
+    global to_learn
+    to_learn = to_learn.drop(rnd_row)
+    to_learn.to_csv(TO_LEARN, index=False)
+    pick_word()
 
 
 # ---------------------------- FLIP CARD ------------------------------- #
@@ -58,7 +73,7 @@ x_button = tk.Button(image=x_button_img, highlightthickness=0, border=0, command
 x_button.grid(row=1, column=0)
 
 v_button_img = tk.PhotoImage(file="images/right.png")
-v_button = tk.Button(image=v_button_img, highlightthickness=0, border=0, command=pick_word)
+v_button = tk.Button(image=v_button_img, highlightthickness=0, border=0, command=green_button)
 v_button.grid(row=1, column=1)
 
 pick_word()
